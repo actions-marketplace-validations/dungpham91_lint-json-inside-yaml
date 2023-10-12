@@ -1,5 +1,5 @@
 # python:3.9.18-alpine
-FROM python@sha256:2e376990a11f1c1e03796d08db0e99c36eadb4bb6491372b227f1e53c3482914
+FROM python@sha256:e2d7d517aa027ab19b99876e228253734f063531f45728baaa751e48d2692f16
 LABEL Maintainer="dungpham91"
 WORKDIR /usr/app/src
 COPY main.py ./
