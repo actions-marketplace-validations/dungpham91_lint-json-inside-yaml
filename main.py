@@ -2,24 +2,43 @@ import os
 import json
 import sys
 
-def check_folder_or_file(input_path):
+def check_folder_or_file(input_paths):
     """
-    Check if the input is a folder, a single file, or multiple files.
-    Returns a list of files if it's a folder or a list with a single file if it's a single file.
+    Check if the input is a folder, a single file, or multiple files/folders.
+    Returns a list of files if they are folders, or a list with a single file/folder if it's a single file/folder.
+    If an input path is '.', it lists all files in the current directory recursively.
 
     Parameters:
-    input_path (str): The path to the folder or file.
+    input_paths (str): A space-separated string of paths to files or folders.
 
     Returns:
-    list: List of files if it's a folder, or a list with a single file if it's a single file.
+    list: List of files if they are folders, or a list with a single file/folder if it's a single file/folder.
+    str: Error message if any input does not exist.
     """
-    if os.path.isdir(input_path):
-        files = os.listdir(input_path)
-        return [os.path.join(input_path, file) for file in files]
-    elif os.path.isfile(input_path):
-        return [input_path]
-    else:
-        return []
+    input_paths = input_paths.split()  # Split string into list of objects
+    files = []
+    for input_path in input_paths:
+        if input_path == '.':
+            # List all files in the current directory and its subdirectories recursively
+            for root, _, filenames in os.walk('.'):
+                for filename in filenames:
+                    files.append(os.path.join(root, filename))
+        else:
+            # Check if the input_path exists
+            if not os.path.exists(input_path):
+                return f"Error: {input_path} does not exist."
+
+            # Check if the input_path is a directory
+            if os.path.isdir(input_path):
+                # List all files in the directory and its subdirectories recursively
+                for root, _, filenames in os.walk(input_path):
+                    for filename in filenames:
+                        files.append(os.path.join(root, filename))
+            else:
+                # If it's not a directory, assume it's a single file or folder
+                files.append(input_path)
+
+    return files
 
 def read_file(file_path):
     """
@@ -84,21 +103,27 @@ def validate_json(json_contents, file_name):
         return f"No JSON content found in '{file_name}'."
 
 def main():
-    input_path = os.getenv("INPUT_FILE_OR_DIR")
+    input_paths = os.getenv("INPUT_FILE_OR_DIR")
 
-    if not input_path:
+    if not input_paths:
         print("The INPUT_FILE_OR_DIR environment variable is not set.")
         exit(1)
 
-    files = check_folder_or_file(input_path)
+    # Check if objects in input_paths exist
+    invalid_inputs = check_folder_or_file(input_paths)
+    if isinstance(invalid_inputs, str):
+        # If the function returns an error message, print the error message and exit with the error code
+        print(invalid_inputs)
+        exit(1)
+
     # Set a variable that tracks whether all JSON is valid or not
     all_json_valid = True
 
-    if not files:
+    if not invalid_inputs:
         print("No valid files or folders found.")
         exit(1)
     else:
-        for file_path in files:
+        for file_path in invalid_inputs:
             json_contents = read_file(file_path)
             if json_contents is not None:
                 result = validate_json(json_contents, os.path.basename(file_path))
